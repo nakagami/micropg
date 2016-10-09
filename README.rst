@@ -13,6 +13,8 @@ use upip
 
     $ micropython -m upip install micropg
 
+or
+
 copy a module file.
 ::
 
