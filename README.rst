@@ -11,7 +11,7 @@ Installation
 use upip 
 ::
 
-    $ micropytohn -m upip install micropg
+    $ micropython -m upip install micropg
 
 copy a module file.
 ::
