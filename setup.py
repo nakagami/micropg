@@ -4,9 +4,9 @@ from distutils.core import setup
 
 
 setup(name='micropg',
-      version='0.1.1',
+      version="%d.%d.%d" % __import__('micropg').VERSION,
       description='PostgreSQL database driver for MicroPython',
-      long_description="""This is a module ported from minipg
+      long_description=description+"""\nThis is a module ported from minipg
 https://github.com/nakagami/minipg
 """,
       url='https://github.com/nakagami/micropg',
