@@ -1,11 +1,11 @@
 import sys
-sys.path.pop(0)
+import micropg
 from distutils.core import setup
 
-
+description='PostgreSQL database driver for MicroPython'
 setup(name='micropg',
       version="%d.%d.%d" % __import__('micropg').VERSION,
-      description='PostgreSQL database driver for MicroPython',
+      description=description,
       long_description=description+"""\nThis is a module ported from minipg
 https://github.com/nakagami/minipg
 """,

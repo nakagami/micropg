@@ -23,7 +23,10 @@
 ##############################################################################
 # PostgreSQL driver for micropython https://github.com/micropython/micropython
 # It's a minipg (https://github.com/nakagami/minipg) subset.
-import usocket
+try:
+    import usocket
+except ImportError:
+    import socket as usocket
 
 VERSION = (0, 1, 2)
 __version__ = '%s.%s.%s' % VERSION
