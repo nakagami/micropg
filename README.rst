@@ -27,7 +27,7 @@ Example
 Query::
 
    import micropg
-   conn = micropg.connect(host='localhost',
+   conn = micropg.connect(host='127.0.0.1',
                        user='postgres',
                        password='secret',
                        database='database_name')
