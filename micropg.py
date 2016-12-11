@@ -25,13 +25,9 @@
 # It's a minipg (https://github.com/nakagami/minipg) subset.
 
 import sys
+import usocket
 
-try:
-    import usocket as socket
-except:
-    import socket
-
-VERSION = (0, 1, 1)
+VERSION = (0, 1, 2)
 __version__ = '%s.%s.%s' % VERSION
 apilevel = '2.0'
 threadsafety = 1
@@ -502,8 +498,8 @@ class Connection(object):
             n += self.sock.send(b[n:])
 
     def _open(self):
-        self.sock = socket.socket()
-        self.sock.connect(socket.getaddrinfo(self.host, self.port)[0][-1])
+        self.sock = usocket.socket()
+        self.sock.connect(usocket.getaddrinfo(self.host, self.port)[0][-1])
 
         if self.timeout is not None:
             self.sock.settimeout(float(self.timeout))
