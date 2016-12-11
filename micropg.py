@@ -23,8 +23,6 @@
 ##############################################################################
 # PostgreSQL driver for micropython https://github.com/micropython/micropython
 # It's a minipg (https://github.com/nakagami/minipg) subset.
-
-import sys
 import usocket
 
 VERSION = (0, 1, 2)
@@ -32,7 +30,6 @@ __version__ = '%s.%s.%s' % VERSION
 apilevel = '2.0'
 threadsafety = 1
 paramstyle = 'format'
-
 
 #-----------------------------------------------------------------------------
 # http://www.postgresql.org/docs/9.3/static/protocol.html
@@ -488,9 +485,6 @@ class Connection(object):
         return r
 
     def _write(self, b):
-        if sys.platform == 'cli':
-            # A workaround for IronPython 2.7.5b2 problem
-            b = str(b)
         if not self.sock:
             raise OperationalError(u"08003:Lost connection")
         n = 0
