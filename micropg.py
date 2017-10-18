@@ -366,7 +366,7 @@ class Connection(object):
                     salt = data[4:]
                     hash1 = hashlib.md5(self.password.encode('ascii') + self.user.encode("ascii")).hexdigest().encode("ascii")
                     hash2 = hashlib.md5(hash1+salt).hexdigest().encode("ascii")
-                    self._send_message(b'p', b''.join([b'md5', hash2, '\x00']))
+                    self._send_message(b'p', b''.join([b'md5', hash2, b'\x00']))
                 else:
                     errobj = InterfaceError("Authentication method %d not supported." % (auth_method,))
             elif code == 83:    # ParameterStatus('S')
