@@ -169,6 +169,13 @@ def _decode_column(data, oid, encoding):
 # ----------------------------------------------------------------------------
 
 
+def _md5_auth_hash(self, salt, user, password):
+    import hashlib
+    hash1 = hashlib.md5(password.encode('ascii') + user.encode("ascii")).hexdigest().encode("ascii")
+    hash2 = hashlib.md5(hash1+salt).hexdigest().encode("ascii")
+    return b''.join([b'md5', hash2, b'\x00'])
+
+
 def _bytes_to_bint(b):     # Read as big endian
     r = 0
     for n in b:
@@ -362,11 +369,7 @@ class Connection(object):
                 if auth_method == 0:      # trust
                     pass
                 elif auth_method == 5:    # md5
-                    import hashlib
-                    salt = data[4:]
-                    hash1 = hashlib.md5(self.password.encode('ascii') + self.user.encode("ascii")).hexdigest().encode("ascii")
-                    hash2 = hashlib.md5(hash1+salt).hexdigest().encode("ascii")
-                    self._send_message(b'p', b''.join([b'md5', hash2, b'\x00']))
+                    self._send_message(b'p', _md5_auth_hash(data[4:], self.user, self.password))
                 else:
                     errobj = InterfaceError("Authentication method %d not supported." % (auth_method,))
             elif code == 83:    # ParameterStatus('S')
