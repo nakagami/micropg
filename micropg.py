@@ -169,7 +169,7 @@ def _decode_column(data, oid, encoding):
 # ----------------------------------------------------------------------------
 
 
-def _md5_auth_hash(self, salt, user, password):
+def _md5_auth_hash(salt, user, password):
     import hashlib
     hash1 = hashlib.md5(password.encode('ascii') + user.encode("ascii")).hexdigest().encode("ascii")
     hash2 = hashlib.md5(hash1+salt).hexdigest().encode("ascii")
