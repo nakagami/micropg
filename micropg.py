@@ -168,15 +168,7 @@ def _decode_column(data, oid, encoding):
 
 # ----------------------------------------------------------------------------
 
-
-def _md5_auth_hash(salt, user, password):
-    import hashlib
-    hash1 = hashlib.md5(password.encode('ascii') + user.encode("ascii")).hexdigest().encode("ascii")
-    hash2 = hashlib.md5(hash1+salt).hexdigest().encode("ascii")
-    return b''.join([b'md5', hash2, b'\x00'])
-
-
-def _bytes_to_bint(b):     # Read as big endian
+def _bytes_to_bint(b):      # Read as big endian
     r = 0
     for n in b:
         r = r * 256 + n
@@ -185,6 +177,29 @@ def _bytes_to_bint(b):     # Read as big endian
 
 def _bint_to_bytes(val):    # Convert int value to big endian 4 bytes.
     return bytes([(val >> 24) & 0xff, (val >> 16) & 0xff, (val >> 8) & 0xff, val & 0xff])
+
+
+def _bytes_to_int(b):       # Read as little endian
+    r = 0
+    for n in reversed(b):
+        r = r * 256 + n
+    return r
+
+
+def _int_to_bytes(val):    # Convert int value to little endian 4 bytes.
+    return bytes([val & 0xff, (val >> 8) & 0xff, (val >> 16) & 0xff, (val >> 24) & 0xff])
+
+
+def _md5_hexdigest(data):
+    # TODO: ubinascii.hexlify(digest_bin)
+    import hashlib
+    return hashlib.hexdigest().encode("ascii")
+
+
+def _md5_auth_hash(salt, user, password):
+    hash1 = _md5_hexdigest(password.encode('ascii') + user.encode("ascii"))
+    hash2 = _md5_hexdigest(hash1+salt)
+    return b''.join([b'md5', hash2, b'\x00'])
 
 
 class Error(Exception):
