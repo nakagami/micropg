@@ -193,7 +193,7 @@ def _int_to_bytes(val):    # Convert int value to little endian 4 bytes.
 def _md5_hexdigest(data):
     # TODO: ubinascii.hexlify(digest_bin)
     import hashlib
-    return hashlib.hexdigest().encode("ascii")
+    return hashlib.md5(data).hexdigest().encode("ascii")
 
 
 def _md5_auth_hash(salt, user, password):
