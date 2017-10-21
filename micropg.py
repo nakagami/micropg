@@ -191,15 +191,14 @@ def _int_to_bytes(val):    # Convert int value to little endian 4 bytes.
 
 
 def _md5_hexdigest(data):
+    try:
+        import ubinascii
+    except ImportError:
+        # fallback for CPython
+        import hashlib
+        return hashlib.md5(data).hexdigest().encode("ascii")
+
     # TODO: ubinascii.hexlify(digest_bin)
-    import hashlib
-    return hashlib.md5(data).hexdigest().encode("ascii")
-
-
-def _md5_auth_hash(salt, user, password):
-    hash1 = _md5_hexdigest(password.encode('ascii') + user.encode("ascii"))
-    hash2 = _md5_hexdigest(hash1+salt)
-    return b''.join([b'md5', hash2, b'\x00'])
 
 
 class Error(Exception):
@@ -384,7 +383,10 @@ class Connection(object):
                 if auth_method == 0:      # trust
                     pass
                 elif auth_method == 5:    # md5
-                    self._send_message(b'p', _md5_auth_hash(data[4:], self.user, self.password))
+                    salt = data[4:]
+                    h1 = _md5_hexdigest(self.password.encode('ascii') + self.user.encode("ascii"))
+                    h2 = _md5_hexdigest(h1+salt)
+                    self._send_message(b'p', b''.join([b'md5', h2, b'\x00']))
                 else:
                     errobj = InterfaceError("Authentication method %d not supported." % (auth_method,))
             elif code == 83:    # ParameterStatus('S')
