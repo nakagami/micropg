@@ -27,6 +27,10 @@ try:
     import usocket
 except ImportError:
     import socket as usocket
+try:
+    import ubinascii
+except ImportError:
+    import binascii as ubinascii
 
 VERSION = (0, 1, 2)
 __version__ = '%s.%s.%s' % VERSION
@@ -191,13 +195,6 @@ def _int_to_bytes(val):    # Convert int value to little endian 4 bytes.
 
 
 def _md5_hexdigest(message):
-    try:
-        import ubinascii
-    except ImportError:
-        # fallback for CPython
-        import binascii as ubinascii
-        #import hashlib; print(hashlib.md5(message).hexdigest().encode("ascii"))
-
     # support only less than 56 bytes
     assert len(message) < 56
 
@@ -307,6 +304,7 @@ def _md5_hexdigest(message):
     c = (c0 + c) & 0xffffffff
     d = (d0 + d) & 0xffffffff
 
+    # import hashlib; return hashlib.md5(message).hexdigest().encode("ascii")
     return ubinascii.hexlify(_int_to_bytes(a) + _int_to_bytes(b) + _int_to_bytes(c) + _int_to_bytes(d))
 
 
