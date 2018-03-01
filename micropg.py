@@ -32,17 +32,17 @@ try:
 except ImportError:
     import binascii as ubinascii
 
-VERSION = (0, 2, 0)
+VERSION = (0, 2, 1)
 __version__ = '%s.%s.%s' % VERSION
 apilevel = '2.0'
 threadsafety = 1
 paramstyle = 'format'
 
 #-----------------------------------------------------------------------------
-# http://www.postgresql.org/docs/9.3/static/protocol.html
-# http://www.postgresql.org/docs/9.3/static/protocol-message-formats.html
+# http://www.postgresql.org/docs/9.6/static/protocol.html
+# http://www.postgresql.org/docs/9.6/static/protocol-message-formats.html
 
-# postgresql-9.3.5/src/include/catalog/pg_type.h
+# https://github.com/postgres/postgres/blob/master/src/include/catalog/pg_type.h
 PG_TYPE_BOOL = 16
 PG_TYPE_BYTEA = 17
 PG_TYPE_CHAR = 18
@@ -78,14 +78,15 @@ PG_TYPE_CASH = 790
 PG_TYPE_MACADDR = 829
 PG_TYPE_INET = 869
 PG_TYPE_CIDR = 650
+PG_TYPE_BOOLARRAY = 1000
 PG_TYPE_NAMEARRAY = 1003
 PG_TYPE_INT2ARRAY = 1005
 PG_TYPE_INT4ARRAY = 1007
 PG_TYPE_TEXTARRAY = 1009
-PG_TYPE_ARRAYOID = 1028
+PG_TYPE_VARCHARARRAY = 1015
 PG_TYPE_FLOAT4ARRAY = 1021
+PG_TYPE_ARRAYOID = 1028
 PG_TYPE_ACLITEM = 1033
-PG_TYPE_CSTRINGARRAY = 1263
 PG_TYPE_BPCHAR = 1042
 PG_TYPE_VARCHAR = 1043
 PG_TYPE_DATE = 1082
@@ -93,6 +94,7 @@ PG_TYPE_TIME = 1083
 PG_TYPE_TIMESTAMP = 1114
 PG_TYPE_TIMESTAMPTZ = 1184
 PG_TYPE_INTERVAL = 1186
+PG_TYPE_CSTRINGARRAY = 1263
 PG_TYPE_TIMETZ = 1266
 PG_TYPE_BIT = 1560
 PG_TYPE_VARBIT = 1562
@@ -126,7 +128,9 @@ PG_TYPE_ANYELEMENT = 2283
 PG_TYPE_ANYNONARRAY = 2776
 PG_TYPE_ANYENUM = 3500
 PG_TYPE_FDW_HANDLER = 3115
+PG_TYPE_JSONBOID = 3802
 PG_TYPE_ANYRANGE = 3831
+
 
 
 def _decode_column(data, oid, encoding):
@@ -676,24 +680,36 @@ class Connection(object):
             self.begin()
         self._execute(query, obj)
 
+    @property
+    def isolation_level(self):
+        return self.get_parameter_status('TRANSACTION ISOLATION LEVEL')
+
     def set_autocommit(self, autocommit):
         self.autocommit = autocommit
 
-    def begin(self):
-        if self._ready_for_query == b'E':
-            self.rollback()
+    def _begin(self):
         self._send_message(b'Q', b"BEGIN\x00")
         self._process_messages(None)
+
+    def begin(self):
+        if self._ready_for_query == b'E':
+            self._rollback()
+        self._begin()
 
     def commit(self):
         if self.sock:
             self._send_message(b'Q', b"COMMIT\x00")
             self.process_messages(None)
+            self._begin()
 
-    def rollback(self):
+    def _rollback(self):
         if self.sock:
             self._send_message(b'Q', b"ROLLBACK\x00")
-        self.process_messages(None)
+            self.process_messages(None)
+
+    def rollback(self):
+        self._rollback()
+        self.begin()
 
     def reopen(self):
         self.close()
@@ -705,6 +721,7 @@ class Connection(object):
             self._write(b'X\x00\x00\x00\x04')
             self.sock.close()
             self.sock = None
+
 
 
 def connect(host, user, password='', database=None, port=5432, timeout=None):
