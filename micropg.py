@@ -1,7 +1,7 @@
 ##############################################################################
 #The MIT License (MIT)
 #
-#Copyright (c) 2014-2018 Hajime Nakagami
+#Copyright (c) 2014-2019 Hajime Nakagami
 #
 #Permission is hereby granted, free of charge, to any person obtaining a copy
 #of this software and associated documentation files (the "Software"), to deal
@@ -596,7 +596,7 @@ class Connection(object):
                         row.append(data[n:n+ln])
                         n += ln
                 for i in range(len(row)):
-                    row[i] = self._decode_column(row[i], obj.description[i][1])
+                    row[i] = _decode_column(row[i], obj.description[i][1], self.encoding)
                 obj._rows.append(tuple(row))
             elif code == 78:
                 pass
