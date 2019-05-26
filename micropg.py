@@ -465,18 +465,22 @@ class Cursor(object):
 
 
 class Connection(object):
-    def __init__(self, user, password, database, host, port, timeout):
+    def __init__(self, user, password, database, host, port, timeout, use_ssl):
         self.user = user
         self.password = password
         self.database = database
         self.host = host
         self.port = port
         self.timeout = timeout
+        self.use_ssl = use_ssl
         self.encoding = 'UTF8'
         self.autocommit = False
+        self.server_version = ''
         self._ready_for_query = b'I'
-        self._open()
         self.encoders = {}
+        self.tz_name = None
+        self.tzinfo = None
+        self._open()
 
     def __enter__(self):
         return self
@@ -668,7 +672,10 @@ class Connection(object):
             raise OperationalError(u"08003:Lost connection")
         r = b''
         while len(r) < ln:
-            b = self.sock.recv(ln-len(r))
+            if hasattr(self.sock, "read"):
+                b = self.sock.read(ln-len(r))
+            else:
+                b = self.sock.recv(ln-len(r))
             if not b:
                 raise OperationalError(u"08003:Can't recv packets")
             r += b
@@ -679,7 +686,10 @@ class Connection(object):
             raise OperationalError(u"08003:Lost connection")
         n = 0
         while (n < len(b)):
-            n += self.sock.send(b[n:])
+            if hasattr(self.sock, "write"):
+                n += self.sock.write(b[n:])
+            else:
+                n += self.sock.send(b[n:])
 
     def _open(self):
         self.sock = usocket.socket()
@@ -687,6 +697,19 @@ class Connection(object):
 
         if self.timeout is not None:
             self.sock.settimeout(float(self.timeout))
+
+        if self.use_ssl:
+            try:
+                import ussl
+            except ImportError:
+                import ssl as ussl
+            self._write(_bint_to_bytes(8))
+            self._write(_bint_to_bytes(80877103))    # SSL request
+            if self._read(1) == b'S':
+                self.sock = ussl.wrap_socket(self.sock)
+            else:
+                raise InterfaceError("Server refuses SSL")
+
         # protocol version 3.0
         v = b'\x00\x03\x00\x00'
         v += b'user\x00' + self.user.encode('ascii') + b'\x00'
@@ -780,5 +803,5 @@ class Connection(object):
 
 
 
-def connect(host, user, password='', database=None, port=5432, timeout=None):
-    return Connection(user, password, database, host, port, timeout)
+def connect(host, user, password='', database=None, port=None, timeout=None, use_ssl=False):
+    return Connection(user, password, database, host, port if port else 5432, timeout, use_ssl)

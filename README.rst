@@ -30,7 +30,8 @@ Query::
    conn = micropg.connect(host='127.0.0.1',
                        user='postgres',
                        password='secret',
-                       database='database_name')
+                       database='database_name',
+                       use_ssl=False)
    cur = conn.cursor()
    cur.execute('select foo, bar from baz')
    for r in cur.fetchall():

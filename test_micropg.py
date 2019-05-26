@@ -1,8 +1,7 @@
 import micropg
-conn = micropg.connect(host='127.0.0.1',
-                    user='postgres',
-                    password='',
-                    database='test_micropg')
+conn = micropg.connect(
+    host='127.0.0.1', user='postgres', password='', database='test_micropg'
+)
 
 cur = conn.cursor()
 
@@ -25,6 +24,19 @@ cur.execute("""
 cur.execute("INSERT INTO test_micropg(id, name) values (1, 'test')")
 cur.execute("INSERT INTO test_micropg(id, name) values (%s, %s)", [2, 'test2'])
 
+conn.commit()
+
+cur.execute("SELECT id, name FROM test_micropg")
+assert cur.fetchall() == [(1, "test"), (2, "test2")]
+
+conn.close()
+
+# test ssl connection
+
+conn = micropg.connect(
+    host='127.0.0.1', user='postgres', password='', database='test_micropg', use_ssl=True
+)
+cur = conn.cursor()
 cur.execute("SELECT id, name FROM test_micropg")
 assert cur.fetchall() == [(1, "test"), (2, "test2")]
 
