@@ -6,7 +6,10 @@ conn = micropg.connect(host='127.0.0.1',
 
 cur = conn.cursor()
 
-cur.execute("BAD STATEMENT")
+try:
+    cur.execute("BAD STATEMENT")
+except micropg.ProgrammingError as e:
+    assert e.message == '42601:syntax error at or near "BAD"'
 
 try:
     cur.execute("DROP TABLE test_micropg")
