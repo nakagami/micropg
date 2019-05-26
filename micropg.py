@@ -32,7 +32,7 @@ try:
 except ImportError:
     import binascii as ubinascii
 
-VERSION = (0, 2, 1)
+VERSION = (0, 2, 2)
 __version__ = '%s.%s.%s' % VERSION
 apilevel = '2.0'
 threadsafety = 1
