@@ -23,7 +23,9 @@ cur.execute("""
 """)
 
 cur.execute("INSERT INTO test_micropg(id, name) values (1, 'test')")
+cur.execute("INSERT INTO test_micropg(id, name) values (%s, %s)", [2, 'test2'])
+
 cur.execute("SELECT id, name FROM test_micropg")
-assert cur.fetchall() == [(1, "test")]
+assert cur.fetchall() == [(1, "test"), (2, "test2")]
 
 conn.close()
