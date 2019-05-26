@@ -5,6 +5,9 @@ conn = micropg.connect(host='127.0.0.1',
                     database='test_micropg')
 
 cur = conn.cursor()
+
+cur.execute("BAD STATEMENT")
+
 try:
     cur.execute("DROP TABLE test_micropg")
 except:

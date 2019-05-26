@@ -314,11 +314,22 @@ def _md5_hexdigest(message):
 
 class Error(Exception):
     def __init__(self, *args):
+        super(Error, self).__init__(*args)
         if len(args) > 0:
             self.message = args[0]
         else:
             self.message = b'Database Error'
-        super(Error, self).__init__(*args)
+        if len(args) > 1:
+            self.code = args[1]
+        else:
+            self.code = ''
+
+    def __str__(self):
+        return self.message
+
+    def __repr__(self):
+        return self.code + ":" + self.message
+
 
     def __str__(self):
         return self.message
@@ -486,10 +497,10 @@ class Connection(object):
                 break
             ln = _bytes_to_bint(self._read(4)) - 4
             data = self._read(ln)
-            if code == 90:  # ReadyForQuery('Z')
+            if code == 90:
                 self._ready_for_query = data
                 break
-            elif code == 82:    # Authenticaton('R')
+            elif code == 82:
                 auth_method = _bytes_to_bint(data[:4])
                 if auth_method == 0:      # trust
                     pass
@@ -500,13 +511,29 @@ class Connection(object):
                     self._send_message(b'p', b''.join([b'md5', h2, b'\x00']))
                 else:
                     errobj = InterfaceError("Authentication method %d not supported." % (auth_method,))
-            elif code == 83:    # ParameterStatus('S')
+            elif code == 83:
                 k, v, _ = data.split(b'\x00')
                 if k == b'server_encoding':
                     self.encoding = v.decode('ascii')
-            elif code == 75:    # BackendKeyData('K')
+                elif k == b'server_version':
+                    version = v.decode('ascii').split('(')[0].split('.')
+                    self.server_version  = int(version[0]) * 10000
+                    if len(version) > 0:
+                        try:
+                            self.server_version += int(version[1]) * 100
+                        except:
+                            pass
+                    if len(version) > 1:
+                        try:
+                            self.server_version += int(version[2])
+                        except:
+                            pass
+                elif k == b'TimeZone':
+                    self.tz_name = v.decode('ascii')
+                    self.tzinfo = None
+            elif code == 75:
                 pass
-            elif code == 67:    # CommandComplete('C')
+            elif code == 67:
                 if not obj:
                     continue
                 command = data[:-1].decode('ascii')
@@ -517,7 +544,7 @@ class Connection(object):
                         if command[:len(k)] == k:
                             obj._rowcount = int(command.split(' ')[-1])
                             break
-            elif code == 84:    # RowDescription('T')
+            elif code == 84:
                 if not obj:
                     continue
                 count = _bytes_to_bint(data[0:2])
@@ -550,10 +577,11 @@ class Connection(object):
 #                        modifier = _bytes_to_bint(data[n+12:n+16])
 #                        format = _bytes_to_bint(data[n+16:n+18]),
                     field = (name, type_code, None, size, precision, scale, None)
+
                     n += 18
                     obj.description[idx] = field
                     idx += 1
-            elif code == 68:    # DataRow('D')
+            elif code == 68:
                 if not obj:
                     continue
                 n = 2
@@ -568,20 +596,48 @@ class Connection(object):
                         row.append(data[n:n+ln])
                         n += ln
                 for i in range(len(row)):
-                    row[i] = _decode_column(row[i], obj.description[i][1], self.encoding)
+                    row[i] = self._decode_column(row[i], obj.description[i][1])
                 obj._rows.append(tuple(row))
-            elif code == 78:    # NoticeResponse('N')
+            elif code == 78:
                 pass
-            elif code == 69 and not errobj:     # ErrorResponse('E')
+            elif code == 69 and not errobj:
                 err = data.split(b'\x00')
                 # http://www.postgresql.org/docs/9.3/static/errcodes-appendix.html
-                errcode = err[1][1:]
-                message = errcode + b':' + err[2][1:]
+                errcode = err[2][1:]
+                message = errcode + b':' + err[3][1:]
                 message = message.decode(self.encoding)
-                if errcode[:2] == b'23':
-                    errobj = IntegrityError(message)
+                if errcode[:2] == b'0A':
+                    errobj = NotSupportedError(message, errcode)
+                elif errcode[:2] in (b'20', b'21'):
+                    errobj = ProgrammingError(message, errcode)
+                elif errcode[:2] in (b'22', ):
+                    errobj = DataError(message, errcode)
+                elif errcode[:2] == b'23':
+                    errobj = IntegrityError(message, errcode)
+                elif errcode[:2] in(b'24', b'25'):
+                    errobj = InternalError(message, errcode)
+                elif errcode[:2] in(b'26', b'27', b'28'):
+                    errobj = OperationalError(message, errcode)
+                elif errcode[:2] in(b'2B', b'2D', b'2F'):
+                    errobj = InternalError(message, errcode)
+                elif errcode[:2] == b'34':
+                    errobj = OperationalError(message, errcode)
+                elif errcode[:2] in (b'38', b'39', b'3B'):
+                    errobj = InternalError(message, errcode)
+                elif errcode[:2] in (b'3D', b'3F'):
+                    errobj = ProgrammingError(message, errcode)
+                elif errcode[:2] in (b'40', b'42', b'44'):
+                    errobj = ProgrammingError(message, errcode)
+                elif errcode[:1] == b'5':
+                    errobj = OperationalError(message, errcode)
+                elif errcode[:1] in b'F':
+                    errobj = InternalError(message, errcode)
+                elif errcode[:1] in b'H':
+                    errobj = OperationalError(message, errcode)
+                elif errcode[:1] in (b'P', b'X'):
+                    errobj = InternalError(message, errcode)
                 else:
-                    errobj = DatabaseError(message)
+                    errobj = DatabaseError(message, errcode)
             elif code == 72:    # CopyOutputResponse('H')
                 pass
             elif code == 100:   # CopyData('d')
