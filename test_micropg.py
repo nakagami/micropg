@@ -39,7 +39,7 @@ conn.close()
 # test ssl connection
 
 conn = micropg.connect(
-    host='127.0.0.1', user='postgres', password='', database='test_micropg', use_ssl=True
+    host='127.0.0.1', user='postgres', password='password', database='test_micropg', use_ssl=True
 )
 cur = conn.cursor()
 cur.execute("SELECT id, name FROM test_micropg")
