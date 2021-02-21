@@ -28,7 +28,6 @@ jobs:
     - name: Install MicroPython
       run: |
         sudo apt install micropython
-        micropython -m upip install micropython-unittest
     - name: Test
       run: |
         micropython test_micropg.py
