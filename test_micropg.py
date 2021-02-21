@@ -1,7 +1,7 @@
 import micropg
 
 conn = micropg.connect(
-    host='127.0.0.1', user='postgres', password='', database='test_micropg'
+    host='127.0.0.1', user='postgres', password='password', database='test_micropg'
 )
 
 cur = conn.cursor()
