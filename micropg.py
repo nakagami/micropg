@@ -1,4 +1,4 @@
-##############################################################################
+#############################################################################
 #The MIT License (MIT)
 #
 #Copyright (c) 2014-2019 Hajime Nakagami
@@ -23,6 +23,7 @@
 ##############################################################################
 # PostgreSQL driver for micropython https://github.com/micropython/micropython
 # It's a minipg (https://github.com/nakagami/minipg) subset.
+import ssl
 try:
     import usocket
 except ImportError:
@@ -699,14 +700,10 @@ class Connection(object):
             self.sock.settimeout(float(self.timeout))
 
         if self.use_ssl:
-            try:
-                import ussl
-            except ImportError:
-                import ssl as ussl
             self._write(_bint_to_bytes(8))
             self._write(_bint_to_bytes(80877103))    # SSL request
             if self._read(1) == b'S':
-                self.sock = ussl.wrap_socket(self.sock)
+                self.sock = ssl.wrap_socket(self.sock)
             else:
                 raise InterfaceError("Server refuses SSL")
 
