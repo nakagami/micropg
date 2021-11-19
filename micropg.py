@@ -399,7 +399,7 @@ class Connection(object):
                 elif auth_method == 5:    # md5
                     salt = data[4:]
                     h1 = ubinascii.hexlify(hashlib.md5(self.password.encode('ascii') + self.user.encode("ascii")).digest())
-                    h2 = ubinascii.hexlify(hashlib.md5(hash1 + salt).digest())
+                    h2 = ubinascii.hexlify(hashlib.md5(h1 + salt).digest())
                     self._send_message(b'p', b''.join([b'md5', h2, b'\x00']))
                 else:
                     errobj = InterfaceError("Authentication method %d not supported." % (auth_method,))
