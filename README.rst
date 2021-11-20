@@ -38,3 +38,8 @@ Query::
       print(r[0], r[1])
    conn.close()
 
+Restriction
+-----------------
+
+Suport trust and md5 authenticaton methods, not SCRAM-SHA-256 authentication method.
+
