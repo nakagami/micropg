@@ -25,14 +25,8 @@
 # It's a minipg (https://github.com/nakagami/minipg) subset.
 import ssl
 import hashlib
-try:
-    import usocket
-except ImportError:
-    import socket as usocket
-try:
-    import ubinascii
-except ImportError:
-    import binascii as ubinascii
+import socket
+import binascii
 
 VERSION = (0, 2, 3)
 __version__ = '%s.%s.%s' % VERSION
@@ -398,8 +392,8 @@ class Connection(object):
                     pass
                 elif auth_method == 5:    # md5
                     salt = data[4:]
-                    h1 = ubinascii.hexlify(hashlib.md5(self.password.encode('ascii') + self.user.encode("ascii")).digest())
-                    h2 = ubinascii.hexlify(hashlib.md5(h1 + salt).digest())
+                    h1 = binascii.hexlify(hashlib.md5(self.password.encode('ascii') + self.user.encode("ascii")).digest())
+                    h2 = binascii.hexlify(hashlib.md5(h1 + salt).digest())
                     self._send_message(b'p', b''.join([b'md5', h2, b'\x00']))
                 else:
                     errobj = InterfaceError("Authentication method %d not supported." % (auth_method,))
@@ -580,8 +574,8 @@ class Connection(object):
                 n += self.sock.send(b[n:])
 
     def _open(self):
-        self.sock = usocket.socket()
-        self.sock.connect(usocket.getaddrinfo(self.host, self.port)[0][-1])
+        self.sock = socket.socket()
+        self.sock.connect(socket.getaddrinfo(self.host, self.port)[0][-1])
 
         if self.timeout is not None:
             self.sock.settimeout(float(self.timeout))
