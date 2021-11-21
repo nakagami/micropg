@@ -33,13 +33,19 @@ Query::
                        database='database_name',
                        use_ssl=False)
    cur = conn.cursor()
+
    cur.execute('select foo, bar from baz')
    for r in cur.fetchall():
       print(r[0], r[1])
+
+   # execute with parameter
+   cur.execute('select foo, bar from baz where name=%s ', ['nakagami'])
+   for r in cur.fetchall():
+      print(r[0], r[1])
+
    conn.close()
 
 Restriction
 -----------------
 
-Suport trust and md5 authenticaton methods, not SCRAM-SHA-256 authentication method.
-
+Suport trust and md5 authenticaton methods, not scram-sha-256 authentication method and others.
