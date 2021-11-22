@@ -128,6 +128,25 @@ PG_TYPE_JSONBOID = 3802
 PG_TYPE_ANYRANGE = 3831
 
 
+def hmac_sha256_digest(key, msg):
+    pad_key = key + b'\x00' * (64 - (len(key) % 64))
+    ik = bytes([0x36 ^ b for b in pad_key])
+    ok = bytes([0x5c ^ b for b in pad_key])
+    return hashlib.sha256(ok + hashlib.sha256(ik+msg).digest()).digest()
+
+
+def pbkdf2_hmac_sha256(password_bytes, salt, iterations):
+    # hashlib.pbkdf2_hmac('sha256', password_bytes, salt, iterations)
+    _u1 = hmac_sha256_digest(password_bytes, salt+b'\x00\x00\x00\x01')
+
+    _ui = int.from_bytes(_u1, 'big')
+
+    for _ in range(iterations - 1):
+        _u1 = hmac_sha256_digest(password_bytes, _u1)
+        _ui ^= int.from_bytes(_u1, 'big')
+
+    return _ui.to_bytes(32, 'big')
+
 
 def _decode_column(data, oid, encoding):
     def _parse_point(data):
