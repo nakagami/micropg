@@ -414,6 +414,85 @@ class Connection(object):
                     h1 = binascii.hexlify(hashlib.md5(self.password.encode('ascii') + self.user.encode("ascii")).digest())
                     h2 = binascii.hexlify(hashlib.md5(h1 + salt).digest())
                     self._send_message(b'p', b''.join([b'md5', h2, b'\x00']))
+                    # accept
+                    code = ord(self._read(1))
+                    assert code == 82
+                    ln = _bytes_to_bint(self._read(4)) - 4
+                    data = self._read(ln)
+                    assert _bytes_to_bint(data[:4]) == 0
+                elif auth_method == 10:   # SASL
+                    assert data[4:-2].decode('utf-8') == 'SCRAM-SHA-256'
+                    printable = string.ascii_letters + string.digits + '+/'
+                    client_nonce = ''.join(
+                        printable[random.randrange(0, len(printable))]
+                        for i in range(24)
+                    )
+
+                    # send client first message
+                    first_message = 'n,,n=,r=' + client_nonce
+                    self._send_data(b'p', b''.join([
+                        b'SCRAM-SHA-256\x00',
+                        _bint_to_bytes(len(first_message)),
+                        first_message.encode('utf-8')
+                    ]))
+
+                    code = ord(self._read(1))
+                    assert code == 82
+                    ln = _bytes_to_bint(self._read(4)) - 4
+                    data = self._read(ln)
+                    _bytes_to_bint(data[:4]) == 11      # SCRAM first
+
+                    server = {
+                        kv[0]: kv[2:]
+                        for kv in data[4:].decode('utf-8').split(',')
+                    }
+                    # r: server nonce
+                    # s: servre salt
+                    # i: iteration count
+                    assert server['r'][:len(client_nonce)] == client_nonce
+
+                    # send client final message
+                    salted_pass = pbkdf2_hmac_sha256(
+                        self.password.encode('utf-8'),
+                        base64.standard_b64decode(server['s']),
+                        int(server['i']),
+                    )
+
+                    client_key = hmac_sha256_digest(salted_pass, b"Client Key")
+
+                    client_first_message_bare = "n=,r=" + client_nonce
+                    server_first_message = "r=%s,s=%s,i=%s" % (server['r'], server['s'], server['i'])
+                    client_final_message_without_proof = "c=biws,r=" + server['r']
+                    auth_msg = ','.join([
+                        client_first_message_bare,
+                        server_first_message,
+                        client_final_message_without_proof
+                    ])
+
+                    client_sig = hmac_sha256_digest(
+                        hashlib.sha256(client_key).digest(),
+                        auth_msg.encode('utf-8'),
+                    ).digest()
+
+                    proof = base64.standard_b64encode(
+                        b"".join([bytes([x ^ y]) for x, y in zip(client_key, client_sig)])
+                    )
+                    self._send_data(b'p',
+                        (client_final_message_without_proof + ",p=").encode('utf-8') + proof
+                    )
+
+                    code = ord(self._read(1))
+                    assert code == 82
+                    ln = _bytes_to_bint(self._read(4)) - 4
+                    data = self._read(ln)
+                    _bytes_to_bint(data[:4]) == 12      # SCRAM final
+
+                    # accept
+                    code = ord(self._read(1))
+                    assert code == 82
+                    ln = _bytes_to_bint(self._read(4)) - 4
+                    data = self._read(ln)
+                    assert _bytes_to_bint(data[:4]) == 0
                 else:
                     errobj = InterfaceError("Authentication method %d not supported." % (auth_method,))
             elif code == 83:
