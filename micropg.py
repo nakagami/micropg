@@ -481,6 +481,8 @@ class Connection(object):
                     proof = binascii.b2a_base64(
                         b"".join([bytes([x ^ y]) for x, y in zip(client_key, client_sig)])
                     )
+                    if proof[-1:] == b'\n':
+                        proof = proof[:-1]
                     self._send_data(b'p',
                         (client_final_message_without_proof + ",p=").encode('utf-8') + proof
                     )
