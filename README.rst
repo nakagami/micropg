@@ -45,7 +45,9 @@ Query::
 
    conn.close()
 
-Restriction
------------------
+Restrictions and Unsupported Features
+--------------------------------------
 
-Suport trust and md5 authenticaton methods, not scram-sha-256 authentication method and others.
+- Supported Authentication METHOD are only 'trust', 'md5' and 'scram-sha-256'.
+- Not support for array data types.
+- Not support for prepared statements.
