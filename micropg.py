@@ -390,6 +390,9 @@ class Connection(object):
     def __exit__(self, exc, value, traceback):
         self.close()
 
+    def _send_data(self, message, data):
+        self._write(b''.join([message, _bint_to_bytes(len(data) + 4), data]))
+
     def _send_message(self, message, data):
         self._write(b''.join([message, _bint_to_bytes(len(data) + 4), data, b'H\x00\x00\x00\x04']))
 
@@ -414,7 +417,7 @@ class Connection(object):
                     salt = data[4:]
                     h1 = binascii.hexlify(hashlib.md5(self.password.encode('ascii') + self.user.encode("ascii")).digest())
                     h2 = binascii.hexlify(hashlib.md5(h1 + salt).digest())
-                    self._send_message(b'p', b''.join([b'md5', h2, b'\x00']))
+                    self._send_data(b'p', b''.join([b'md5', h2, b'\x00']))
                     # accept
                     code = ord(self._read(1))
                     assert code == 82
