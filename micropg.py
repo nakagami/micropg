@@ -1,25 +1,25 @@
 #############################################################################
-#The MIT License (MIT)
+# The MIT License (MIT)
 #
-#Copyright (c) 2014-2019, 2021 Hajime Nakagami
+# Copyright (c) 2014-2019, 2021 Hajime Nakagami
 #
-#Permission is hereby granted, free of charge, to any person obtaining a copy
-#of this software and associated documentation files (the "Software"), to deal
-#in the Software without restriction, including without limitation the rights
-#to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-#copies of the Software, and to permit persons to whom the Software is
-#furnished to do so, subject to the following conditions:
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
 #
-#The above copyright notice and this permission notice shall be included in all
-#copies or substantial portions of the Software.
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
 #
-#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-#SOFTWARE.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
 ##############################################################################
 # PostgreSQL driver for micropython https://github.com/micropython/micropython
 # It's a minipg (https://github.com/nakagami/minipg) subset.
@@ -35,7 +35,7 @@ apilevel = '2.0'
 threadsafety = 1
 paramstyle = 'format'
 
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # http://www.postgresql.org/docs/9.6/static/protocol.html
 # http://www.postgresql.org/docs/9.6/static/protocol-message-formats.html
 
@@ -190,7 +190,6 @@ def _decode_column(data, oid, encoding):
         return eval(data)
     return data
 
-# ----------------------------------------------------------------------------
 
 def _bytes_to_bint(b):      # Read as big endian
     r = 0
@@ -233,13 +232,6 @@ class Error(Exception):
         return self.code + ":" + self.message
 
 
-    def __str__(self):
-        return self.message
-
-    def __repr__(self):
-        return self.message
-
-
 class Warning(Exception):
     pass
 
@@ -252,6 +244,10 @@ class DatabaseError(Error):
     pass
 
 
+class InternalError(DatabaseError):
+    pass
+
+
 class OperationalError(DatabaseError):
     pass
 
@@ -261,6 +257,10 @@ class ProgrammingError(DatabaseError):
 
 
 class IntegrityError(DatabaseError):
+    pass
+
+
+class DataError(DatabaseError):
     pass
 
 
@@ -483,7 +483,8 @@ class Connection(object):
                     )
                     if proof[-1:] == b'\n':
                         proof = proof[:-1]
-                    self._send_data(b'p',
+                    self._send_data(
+                        b'p',
                         (client_final_message_without_proof + ",p=").encode('utf-8') + proof
                     )
 
@@ -507,16 +508,16 @@ class Connection(object):
                     self.encoding = v.decode('ascii')
                 elif k == b'server_version':
                     version = v.decode('ascii').split('(')[0].split('.')
-                    self.server_version  = int(version[0]) * 10000
+                    self.server_version = int(version[0]) * 10000
                     if len(version) > 0:
                         try:
                             self.server_version += int(version[1]) * 100
-                        except:
+                        except Exception:
                             pass
                     if len(version) > 1:
                         try:
                             self.server_version += int(version[2])
-                        except:
+                        except Exception:
                             pass
                 elif k == b'TimeZone':
                     self.tz_name = v.decode('ascii')
@@ -782,7 +783,6 @@ class Connection(object):
             self._write(b'X\x00\x00\x00\x04')
             self.sock.close()
             self.sock = None
-
 
 
 def connect(host, user, password='', database=None, port=None, timeout=None, use_ssl=False):
