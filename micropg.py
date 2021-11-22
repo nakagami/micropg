@@ -422,7 +422,7 @@ class Connection(object):
                     assert _bytes_to_bint(data[:4]) == 0
                 elif auth_method == 10:   # SASL
                     assert data[4:-2].decode('utf-8') == 'SCRAM-SHA-256'
-                    printable = string.ascii_letters + string.digits + '+/'
+                    printable = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/'
                     client_nonce = ''.join(
                         printable[random.randrange(0, len(printable))]
                         for i in range(24)
@@ -454,7 +454,7 @@ class Connection(object):
                     # send client final message
                     salted_pass = pbkdf2_hmac_sha256(
                         self.password.encode('utf-8'),
-                        base64.standard_b64decode(server['s']),
+                        binascii.a2b_base64(server['s']),
                         int(server['i']),
                     )
 
@@ -474,7 +474,7 @@ class Connection(object):
                         auth_msg.encode('utf-8'),
                     ).digest()
 
-                    proof = base64.standard_b64encode(
+                    proof = binascii.b2a_base64(
                         b"".join([bytes([x ^ y]) for x, y in zip(client_key, client_sig)])
                     )
                     self._send_data(b'p',
