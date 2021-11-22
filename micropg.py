@@ -476,7 +476,7 @@ class Connection(object):
                     client_sig = hmac_sha256_digest(
                         hashlib.sha256(client_key).digest(),
                         auth_msg.encode('utf-8'),
-                    ).digest()
+                    )
 
                     proof = binascii.b2a_base64(
                         b"".join([bytes([x ^ y]) for x, y in zip(client_key, client_sig)])
