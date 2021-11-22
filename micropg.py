@@ -27,6 +27,7 @@ import ssl
 import hashlib
 import socket
 import binascii
+import random
 
 VERSION = (0, 2, 3)
 __version__ = '%s.%s.%s' % VERSION
