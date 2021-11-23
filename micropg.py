@@ -29,7 +29,7 @@ import socket
 import binascii
 import random
 
-VERSION = (0, 2, 3)
+VERSION = (0, 3, 0)
 __version__ = '%s.%s.%s' % VERSION
 apilevel = '2.0'
 threadsafety = 1
