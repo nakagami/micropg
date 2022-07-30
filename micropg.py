@@ -787,3 +787,17 @@ class Connection(object):
 
 def connect(host, user, password='', database=None, port=None, timeout=None, use_ssl=False):
     return Connection(user, password, database, host, port if port else 5432, timeout, use_ssl)
+
+
+def create_database(database, host, user, password='', port=None, use_ssl=False):
+    with connect(host, user, password, None, port, None, use_ssl) as conn:
+        conn._rollback()
+        conn._send_message(b'Q', 'CREATE DATABASE {}'.format(database).encode('utf-8') + b'\x00')
+        conn.process_messages(None)
+
+
+def drop_database(database, host, user, password='', port=None, use_ssl=False):
+    with connect(host, user, password, None, port, None, use_ssl) as conn:
+        conn._rollback()
+        conn._send_message(b'Q', 'DROP DATABASE {}'.format(database).encode('utf-8') + b'\x00')
+        conn.process_messages(None)

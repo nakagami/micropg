@@ -1,5 +1,12 @@
 import micropg
 
+try:
+    micropg.create_database(
+        host='127.0.0.1', user='postgres', password='password', database='test_micropg'
+    )
+except Exception:
+    pass
+
 conn = micropg.connect(
     host='127.0.0.1', user='postgres', password='password', database='test_micropg'
 )
