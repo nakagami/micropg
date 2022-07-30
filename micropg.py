@@ -427,10 +427,8 @@ class Connection(object):
                 elif auth_method == 10:   # SASL
                     assert data[4:-2].decode('utf-8') == 'SCRAM-SHA-256'
                     printable = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/'
-                    client_nonce = ''.join(
-                        printable[random.randrange(0, len(printable))]
-                        for i in range(24)
-                    )
+                    # len(printable) == 2**6
+                    client_nonce = ''.join(printable[random.getrandbits(6)] for i in range(24))
 
                     # send client first message
                     first_message = 'n,,n=,r=' + client_nonce
