@@ -51,3 +51,6 @@ Restrictions and Unsupported Features
 - Supported Authentication METHOD are only 'trust', 'md5' and 'scram-sha-256'.
 - Not support for array data types.
 - Not support for prepared statements.
+
+If you use md5 authentication METHOD, you may need a patch
+https://github.com/nakagami/micropg/issues/2
