@@ -54,3 +54,9 @@ Restrictions and Unsupported Features
 
 If you use md5 authentication METHOD, you may need a patch
 https://github.com/nakagami/micropg/issues/2
+
+For CPython
+---------------------
+
+I also wrote a pure Python driver.
+https://github.com/nakagami/minipg
