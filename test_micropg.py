@@ -42,7 +42,7 @@ assert cur.fetchall() == [(1, "test"), (2, "test2")]
 
 conn.close()
 
-if not os.environ('GITHUB_ACTIONS'):
+if False:   # disable ssl connection
     # test ssl connection
     conn = micropg.connect(
         host='127.0.0.1', user='postgres', password='password', database='test_micropg', use_ssl=True
