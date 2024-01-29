@@ -51,4 +51,4 @@ if False:   # disable ssl connection
     cur.execute("SELECT id, name FROM test_micropg")
     assert cur.fetchall() == [(1, "test"), (2, "test2")]
 
-conn.close()
+    conn.close()
