@@ -1,8 +1,6 @@
-import sys
-import micropg
-from distutils.core import setup
+from setuptools import setup
 
-description='PostgreSQL database driver for MicroPython'
+description = 'PostgreSQL database driver for MicroPython'
 setup(name='micropg',
       version="%d.%d.%d" % __import__('micropg').VERSION,
       description=description,
