@@ -188,6 +188,8 @@ def _decode_column(data, oid, encoding):
         return (_parse_point(p), float(r))
     elif oid in (PG_TYPE_LSEG, PG_TYPE_PATH, PG_TYPE_BOX, PG_TYPE_POLYGON, PG_TYPE_LINE):
         return eval(data)
+    elif oid in (PG_TYPE_JSON, ):
+        return data
     return data
 
 
