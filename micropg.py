@@ -433,11 +433,11 @@ class Connection(object):
                     client_nonce = ''.join(printable[random.getrandbits(6)] for i in range(24))
 
                     # send client first message
-                    first_message = 'n,,n=,r=' + client_nonce
+                    client_first_message = 'n,,n=,r=' + client_nonce
                     self._send_data(b'p', b''.join([
                         b'SCRAM-SHA-256\x00',
-                        _bint_to_bytes(len(first_message)),
-                        first_message.encode('utf-8')
+                        _bint_to_bytes(len(client_first_message)),
+                        client_first_message.encode('utf-8')
                     ]))
 
                     code = ord(self._read(1))
@@ -446,6 +446,7 @@ class Connection(object):
                     data = self._read(ln)
                     _bytes_to_bint(data[:4]) == 11      # SCRAM first
 
+                    # recv server first message
                     server = {
                         kv[0]: kv[2:]
                         for kv in data[4:].decode('utf-8').split(',')
@@ -483,9 +484,11 @@ class Connection(object):
                     )
                     if proof[-1:] == b'\n':
                         proof = proof[:-1]
+                    proof = proof.decode('utf-8')
+                    client_final_message = client_final_message_without_proof + ",p=" + proof
                     self._send_data(
                         b'p',
-                        (client_final_message_without_proof + ",p=").encode('utf-8') + proof
+                        client_final_message.encode('utf-8')
                     )
 
                     code = ord(self._read(1))
