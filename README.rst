@@ -23,6 +23,7 @@ copy a module file.
 
 Example
 -----------------
+You find more examples in the `examples <./examples>`_ folder.
 
 Query::
 
