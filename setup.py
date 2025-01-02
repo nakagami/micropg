@@ -8,6 +8,7 @@ setup(name='micropg',
 https://github.com/nakagami/minipg
 """,
       url='https://github.com/nakagami/micropg',
+      keywords=['PostgreSQL'],
       author='Hajime Nakagami',
       author_email='nakagami@gmail.com',
       license='MIT',
