@@ -1,7 +1,7 @@
 #############################################################################
 # The MIT License (MIT)
 #
-# Copyright (c) 2014-2019, 2021-2024 Hajime Nakagami
+# Copyright (c) 2014-2019, 2021-2025 Hajime Nakagami
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,7 @@ import socket
 import binascii
 import random
 
-VERSION = (0, 3, 2)
+VERSION = (0, 3, 3)
 __version__ = '%s.%s.%s' % VERSION
 apilevel = '2.0'
 threadsafety = 1

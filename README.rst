@@ -2,28 +2,31 @@
 micropg
 =============
 
-A MicroPython PostgreSQL database driver.
+PostgreSQL database driver for Python and MicroPython.
 
 
 Installation
 -----------------
 
-use upip 
+Python
++++++++++++++++
+
 ::
 
-    $ micropython -m upip install micropg
+   pip install micropg
 
-or
+MicroPython
++++++++++++++++
 
-copy a module file.
+Go interactive shell and install with mip as follow.
 ::
 
-    $ cd $(HOME)/.micropython/lib
-    $ wget https://github.com/nakagami/micropg/raw/master/micropg.py
+   >>> import mip
+   >>> mip.install("https://github.com/nakagami/micropg/blob/master/micropg.py")
 
 Example
 -----------------
-You find more examples in the `examples <./examples>`_ folder.
+You find more examples in the `examples <https://github.com/nakagami/micropg/tree/master/examples>`_ folder.
 
 Query::
 
@@ -49,12 +52,15 @@ Query::
 Restrictions and Unsupported Features
 --------------------------------------
 
+- If installed in Python, it can only handle types supported by MicroPython.
 - Supported Authentication METHOD are only 'trust', 'md5' and 'scram-sha-256'.
 - Not support for array data types.
 - Not support for prepared statements.
 
 If you use md5 authentication METHOD, you may need a patch
 https://github.com/nakagami/micropg/issues/2
+
+
 
 For CPython
 ---------------------
