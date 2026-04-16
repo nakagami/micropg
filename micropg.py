@@ -23,7 +23,6 @@
 ##############################################################################
 # PostgreSQL driver for micropython https://github.com/micropython/micropython
 # It's a minipg (https://github.com/nakagami/minipg) subset.
-import ssl
 import hashlib
 import socket
 import binascii
@@ -692,6 +691,7 @@ class Connection(object):
             self._write(_bint_to_bytes(8))
             self._write(_bint_to_bytes(80877103))    # SSL request
             if self._read(1) == b'S':
+                import ssl
                 self.sock = ssl.wrap_socket(self.sock)
             else:
                 raise InterfaceError("Server refuses SSL")
