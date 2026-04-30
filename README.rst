@@ -22,7 +22,10 @@ Go interactive shell and install with mip as follow.
 ::
 
    >>> import mip
+   >>> mip.install("ssl")
    >>> mip.install("https://github.com/nakagami/micropg/blob/master/micropg.py")
+
+The SSL module needs to be installed only if it is specified as an argument when connect.
 
 Example
 -----------------
