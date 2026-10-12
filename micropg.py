@@ -376,7 +376,7 @@ class Connection(object):
         self.port = port
         self.timeout = timeout
         self.use_ssl = use_ssl
-        self.encoding = 'UTF8'
+        self.encoding = 'utf-8'
         self.autocommit = False
         self.server_version = ''
         self._ready_for_query = b'I'
@@ -507,7 +507,8 @@ class Connection(object):
             elif code == 83:
                 k, v, _ = data.split(b'\x00')
                 if k == b'server_encoding':
-                    self.encoding = v.decode('ascii')
+                    server_encoding = v.decode('ascii')
+                    self.encoding = 'utf-8' if server_encoding == 'UTF8' else server_encoding
                 elif k == b'server_version':
                     version = v.decode('ascii').split('(')[0].split('.')
                     self.server_version = int(version[0]) * 10000
