@@ -24,10 +24,16 @@ jobs:
           POSTGRES_DB: test_micropg
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
     steps:
-    - uses: actions/checkout@v3
-    - name: Install MicroPython
+    - uses: actions/checkout@v4
+    - name: Build and install MicroPython
       run: |
-        sudo apt install micropython
+        sudo apt update && sudo apt install -y build-essential libffi-dev pkg-config
+        git clone --depth 1 --recurse-submodules https://github.com/micropython/micropython.git
+        cd micropython
+        make -C mpy-cross
+        make -C ports/unix submodules
+        make -C ports/unix
+        sudo make -C ports/unix install
     - name: Test
       run: |
         micropython test_micropg.py
