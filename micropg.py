@@ -507,8 +507,7 @@ class Connection(object):
             elif code == 83:
                 k, v, _ = data.split(b'\x00')
                 if k == b'server_encoding':
-                    server_encoding = v.decode('ascii')
-                    self.encoding = 'utf-8' if server_encoding == 'UTF8' else server_encoding
+                    self.encoding = v.decode('ascii').lower()
                 elif k == b'server_version':
                     version = v.decode('ascii').split('(')[0].split('.')
                     self.server_version = int(version[0]) * 10000
