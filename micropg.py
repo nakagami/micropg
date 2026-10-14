@@ -302,6 +302,7 @@ class Cursor(object):
             raise ProgrammingError(u"08003:Lost connection")
         self.description = []
         self._rows.clear()
+        self._rowcount = 0
         self.args = args
         if args:
             escaped_args = tuple(
@@ -378,7 +379,8 @@ class Connection(object):
         self.use_ssl = use_ssl
         self.encoding = 'utf-8'
         self.autocommit = False
-        self.server_version = ''
+        self.server_version = 0
+        self.parameter_statuses = {}
         self._ready_for_query = b'I'
         self.encoders = {}
         self.tz_name = None
@@ -416,7 +418,7 @@ class Connection(object):
                     pass
                 elif auth_method == 5:    # md5
                     salt = data[4:]
-                    h1 = binascii.hexlify(hashlib.md5(self.password.encode('ascii') + self.user.encode("ascii")).digest())
+                    h1 = binascii.hexlify(hashlib.md5(self.password.encode('utf-8') + self.user.encode("utf-8")).digest())
                     h2 = binascii.hexlify(hashlib.md5(h1 + salt).digest())
                     self._send_data(b'p', b''.join([b'md5', h2, b'\x00']))
                     # accept
@@ -426,7 +428,8 @@ class Connection(object):
                     data = self._read(ln)
                     assert _bytes_to_bint(data[:4]) == 0
                 elif auth_method == 10:   # SASL
-                    assert b'SCRAM-SHA-256\x00\x00' in data
+                    sasl_mechanisms = [m for m in data[4:].split(b'\x00') if m]
+                    assert b'SCRAM-SHA-256' in sasl_mechanisms
                     printable = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/'
                     # len(printable) == 2**6
                     client_nonce = ''.join(printable[random.getrandbits(6)] for i in range(24))
@@ -505,25 +508,29 @@ class Connection(object):
                 else:
                     errobj = InterfaceError("Authentication method %d not supported." % (auth_method,))
             elif code == 83:
-                k, v, _ = data.split(b'\x00')
-                if k == b'server_encoding':
-                    self.encoding = v.decode('ascii').lower()
-                elif k == b'server_version':
-                    version = v.decode('ascii').split('(')[0].split('.')
-                    self.server_version = int(version[0]) * 10000
-                    if len(version) > 0:
+                parts = data[:-1].split(b'\x00', 1)
+                if len(parts) == 2:
+                    k, v = parts
+                    self.parameter_statuses[k.decode('ascii', 'ignore')] = v.decode(self.encoding, 'ignore')
+                    if k == b'server_encoding':
+                        self.encoding = v.decode('ascii').lower()
+                    elif k == b'server_version':
+                        version = v.decode('ascii').split('(')[0].split('.')
                         try:
-                            self.server_version += int(version[1]) * 100
+                            major = int(version[0])
+                            if len(version) == 1:
+                                self.server_version = major * 10000
+                            elif major >= 10:
+                                self.server_version = major * 10000 + int(version[1])
+                            else:
+                                minor = int(version[1])
+                                patch = int(version[2]) if len(version) > 2 else 0
+                                self.server_version = major * 10000 + minor * 100 + patch
                         except Exception:
                             pass
-                    if len(version) > 1:
-                        try:
-                            self.server_version += int(version[2])
-                        except Exception:
-                            pass
-                elif k == b'TimeZone':
-                    self.tz_name = v.decode('ascii')
-                    self.tzinfo = None
+                    elif k == b'TimeZone':
+                        self.tz_name = v.decode('ascii')
+                        self.tzinfo = None
             elif code == 75:
                 pass
             elif code == 67:
@@ -533,7 +540,7 @@ class Connection(object):
                 if command == 'SHOW':
                     obj._rowcount = 1
                 else:
-                    for k in ('SELECT', 'UPDATE', 'DELETE', 'INSERT'):
+                    for k in ('SELECT', 'UPDATE', 'DELETE', 'INSERT', 'MERGE', 'COPY', 'FETCH', 'MOVE'):
                         if command[:len(k)] == k:
                             obj._rowcount = int(command.split(' ')[-1])
                             break
@@ -594,11 +601,13 @@ class Connection(object):
             elif code == 78:
                 pass
             elif code == 69 and not errobj:
-                err = data.split(b'\x00')
-                # http://www.postgresql.org/docs/9.3/static/errcodes-appendix.html
-                errcode = err[2][1:]
-                message = errcode + b':' + err[3][1:]
-                message = message.decode(self.encoding)
+                fields = {}
+                for field in data.split(b'\x00'):
+                    if field:
+                        fields[field[:1]] = field[1:]
+                errcode = fields.get(b'C', b'')
+                errmsg = fields.get(b'M', b'')
+                message = (errcode + b':' + errmsg).decode(self.encoding)
                 if errcode[:2] == b'0A':
                     errobj = NotSupportedError(message, errcode)
                 elif errcode[:2] in (b'20', b'21'):
@@ -698,9 +707,9 @@ class Connection(object):
 
         # protocol version 3.0
         v = b'\x00\x03\x00\x00'
-        v += b'user\x00' + self.user.encode('ascii') + b'\x00'
+        v += b'user\x00' + self.user.encode('utf-8') + b'\x00'
         if self.database:
-            v += b'database\x00' + self.database.encode('ascii') + b'\x00'
+            v += b'database\x00' + self.database.encode('utf-8') + b'\x00'
         v += b'\x00'
 
         self._write(_bint_to_bytes(len(v) + 4) + v)
@@ -713,6 +722,8 @@ class Connection(object):
             return func(self, v)
         if v is None:
             return 'NULL'
+        elif t == int or t == float:
+            return str(v)
         elif t == str:  # string
             return u"'" + v.replace(u"'", u"''") + u"'"
         elif t == bytearray or t == bytes:        # binary
@@ -737,20 +748,24 @@ class Connection(object):
     def _execute(self, query, obj):
         self._send_message(b'Q', query.encode(self.encoding) + b'\x00')
         self.process_messages(obj)
-        if self.autocommit:
-            self.commit()
 
     def execute(self, query, obj=None):
-        if self._ready_for_query != b'T':
+        if not self.autocommit and self._ready_for_query != b'T':
             self.begin()
         self._execute(query, obj)
 
+    def get_parameter_status(self, param):
+        return self.parameter_statuses.get(param)
+
     @property
     def isolation_level(self):
-        return self.get_parameter_status('TRANSACTION ISOLATION LEVEL')
+        return self.get_parameter_status('default_transaction_isolation') or self.get_parameter_status('TRANSACTION ISOLATION LEVEL')
 
     def set_autocommit(self, autocommit):
-        self.autocommit = autocommit
+        if self.autocommit != autocommit:
+            if autocommit and self._ready_for_query == b'T':
+                self.commit()
+            self.autocommit = autocommit
 
     def _begin(self):
         self._send_message(b'Q', b"BEGIN\x00")
@@ -765,7 +780,8 @@ class Connection(object):
         if self.sock:
             self._send_message(b'Q', b"COMMIT\x00")
             self.process_messages(None)
-            self._begin()
+            if not self.autocommit:
+                self._begin()
 
     def _rollback(self):
         if self.sock:
@@ -774,7 +790,8 @@ class Connection(object):
 
     def rollback(self):
         self._rollback()
-        self.begin()
+        if not self.autocommit:
+            self.begin()
 
     def reopen(self):
         self.close()
